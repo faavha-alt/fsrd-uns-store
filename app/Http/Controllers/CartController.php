@@ -30,29 +30,37 @@ class CartController extends Controller
 
     // Tambah ke keranjang
     public function add(Request $request, Product $product)
-    {
-        if ($product->stock <= 0) {
-            return back()->with('error', 'Stok produk habis.');
-        }
-
-        $cart = session()->get('cart', []);
-        $key = $product->id;
-
-        if (isset($cart[$key])) {
-            $cart[$key]['quantity'] += 1;
-        } else {
-            $cart[$key] = [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => 1,
-                'image' => $product->images[0] ?? null,
-            ];
-        }
-
-        session()->put('cart', $cart);
-        return back()->with('success', 'Produk ditambahkan ke keranjang!');
+{
+    if ($product->stock <= 0) {
+        return back()->with('error', 'Stok produk habis.');
     }
+
+    $cart = session()->get('cart', []);
+    $key  = $product->id;
+
+    if (isset($cart[$key])) {
+        $cart[$key]['quantity'] += 1;
+    } else {
+        $cart[$key] = [
+            'product_id' => $product->id,
+            'name'       => $product->name,
+            'price'      => $product->price,
+            'quantity'   => 1,
+            'image'      => $product->images[0] ?? null,
+        ];
+    }
+
+    // Simpan cart dulu sebelum redirect
+    session()->put('cart', $cart);
+
+    if ($request->input('redirect') === 'checkout') {
+        return redirect()->route('cart.checkout');
+    }
+
+    return back()->with('success', 'Produk ditambahkan ke keranjang!');
+}
+
+
 
     // Update quantity
     public function update(Request $request, $productId)

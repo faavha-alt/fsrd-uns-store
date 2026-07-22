@@ -157,12 +157,16 @@ Route::middleware(['auth', 'admin.timeout'])->prefix('admin')->name('admin.')->g
 
         // Activity Log
         Route::get('activity-log', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-log.index');
-	
-	    // Laporan
-	    Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
-	    Route::get('reports/orders/export', [\App\Http\Controllers\Admin\ReportController::class, 'exportOrders'])->name('reports.orders.export');
-	    Route::get('reports/bookings/export', [\App\Http\Controllers\Admin\ReportController::class, 'exportBookings'])->name('reports.bookings.export');
-    
+
+	// Marketplace
+	Route::resource('marketplaces', \App\Http\Controllers\Admin\MarketplaceController::class)->except(['show', 'edit', 'create']);
+	Route::post('marketplaces/{marketplace}/toggle', [\App\Http\Controllers\Admin\MarketplaceController::class, 'toggleActive'])->name('marketplaces.toggle');
+
+	// Laporan
+	Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+	Route::get('reports/orders/export', [\App\Http\Controllers\Admin\ReportController::class, 'exportOrders'])->name('reports.orders.export');
+	Route::get('reports/bookings/export', [\App\Http\Controllers\Admin\ReportController::class, 'exportBookings'])->name('reports.bookings.export');
+
         Route::get('notifications/read-all', function() {
         \App\Helpers\NotificationHelper::markAllRead();
             return back();

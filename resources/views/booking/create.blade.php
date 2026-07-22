@@ -133,41 +133,51 @@
             </div>
 
             {{-- RINGKASAN KANAN --}}
-            <div class="order-summary-card">
-                <div class="summary-title">Ringkasan Booking</div>
+<div class="order-summary-card">
+    <div class="summary-title">Ringkasan Booking</div>
 
-                <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);">
-                    <strong style="font-size:14px; display:block; margin-bottom:4px;">{{ $schedule->trainingClass->name }}</strong>
-                    <span style="font-size:12px; color:var(--muted); display:block;">📅 {{ \Carbon\Carbon::parse($schedule->date)->format('d M Y') }}</span>
-                    <span style="font-size:12px; color:var(--muted); display:block;">⏰ {{ substr($schedule->start_time,0,5) }} – {{ substr($schedule->end_time,0,5) }} WIB</span>
-                    <span style="font-size:12px; color:var(--muted); display:block;">📍 {{ $schedule->location }}</span>
-                </div>
+    <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <strong style="font-size:14px; display:block; margin-bottom:4px;">{{ $schedule->trainingClass->name }}</strong>
+        <span style="font-size:12px; color:var(--muted); display:block;">📅 {{ \Carbon\Carbon::parse($schedule->date)->translatedFormat('l, d F Y') }}</span>
+        <span style="font-size:12px; color:var(--muted); display:block;">⏰ {{ substr($schedule->start_time,0,5) }} – {{ substr($schedule->end_time,0,5) }} WIB</span>
+        <span style="font-size:12px; color:var(--muted); display:block;">📍 {{ $schedule->location }}</span>
+    </div>
 
-                <div class="summary-row">
-                    <span>Biaya Pelatihan</span>
-                    <span>Rp {{ number_format($schedule->trainingClass->price, 0, ',', '.') }}</span>
-                </div>
-                <div class="summary-row">
-                    <span>Kode Unik</span>
-                    <span>ditentukan otomatis</span>
-                </div>
+    <div class="summary-row">
+        <span>Biaya Pelatihan</span>
+        <span>Rp {{ number_format($schedule->trainingClass->price, 0, ',', '.') }}</span>
+    </div>
+    <div class="summary-row">
+        <span>Kode Unik</span>
+        <span style="color:var(--cerulean); font-weight:700;">+{{ $uniqueCode }}</span>
+    </div>
 
-                <div class="summary-total">
-                    <span>Estimasi Total</span>
-                    <span>Rp {{ number_format($schedule->trainingClass->price, 0, ',', '.') }}+</span>
-                </div>
+    <div class="summary-total">
+        <span>Total Transfer</span>
+        <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+    </div>
 
-                <div style="background:var(--sky-pale); border:1px solid rgba(31,171,225,0.2); border-radius:8px; padding:12px; font-size:12px; color:var(--cerulean-dark); margin-bottom:16px;">
-                    💡 Nominal pasti (termasuk kode unik) akan diberikan setelah konfirmasi admin. Maksimal 1×24 jam.
-                </div>
+    {{-- Info Rekening Terpilih --}}
+    <div id="selectedBankInfo" style="background:var(--sky-pale); border:1px solid rgba(31,171,225,0.2);
+        border-radius:8px; padding:12px; font-size:12px; color:var(--cerulean-dark); margin-bottom:12px;">
+    </div>
 
-                <button type="submit" class="btn-submit">✓ Kirim Booking</button>
+    {{-- Peringatan kode unik --}}
+    <div style="background:var(--gold-pale); border:1px solid rgba(233,168,40,0.4);
+        border-radius:8px; padding:12px; font-size:12px; color:#92400E; margin-bottom:16px; line-height:1.6;">
+        ⚠️ <strong>Penting!</strong> Transfer TEPAT
+        <strong>Rp {{ number_format($total, 0, ',', '.') }}</strong>
+        termasuk kode unik <strong>{{ $uniqueCode }}</strong> di akhir nominal.
+        Nominal berbeda akan memperlambat verifikasi.
+    </div>
 
-                <a href="{{ route('pelatihan.show', $schedule->trainingClass) }}"
-                    style="display:block; text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
-                    ← Kembali ke Detail Kelas
-                </a>
-            </div>
+    <button type="submit" class="btn-submit">✓ Kirim Booking</button>
+
+    <a href="{{ route('pelatihan.show', $schedule->trainingClass) }}"
+        style="display:block; text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
+        ← Kembali ke Detail Kelas
+    </a>
+</div>
         </div>
     </form>
 </div>
@@ -178,12 +188,27 @@ function selectBank(el) {
     document.querySelectorAll('.bank-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     el.querySelector('input[type=radio]').checked = true;
+    updateBankDetail(el);
 }
+
+function updateBankDetail(el) {
+    const bankName   = el.querySelector('strong').textContent;
+    const bankDetail = el.querySelector('span').textContent;
+    document.getElementById('selectedBankInfo').innerHTML =
+        '🏦 Transfer ke: <strong>' + bankName + '</strong> — ' + bankDetail;
+}
+
 function showFileName(input) {
     if (input.files.length > 0) {
         document.getElementById('fileName').textContent = '✓ ' + input.files[0].name;
     }
 }
+
+// Init bank info pertama
+document.addEventListener('DOMContentLoaded', function() {
+    const firstBank = document.querySelector('.bank-option');
+    if (firstBank) updateBankDetail(firstBank);
+});
 </script>
 @endpush
 @endsection

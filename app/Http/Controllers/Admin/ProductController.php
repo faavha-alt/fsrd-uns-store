@@ -34,39 +34,37 @@ class ProductController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'creator_id' => 'required|exists:creators,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
+{
+    $validated = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'creator_id'  => 'required|exists:creators,id',
+        'name'        => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price'       => 'required|numeric|min:0',
+        'stock'       => 'required|integer|min:0',
+        'images'      => 'nullable|array|max:5',
+        'images.*' => 'image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+    ]);
 
-        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
-        $validated['curator_id'] = auth()->id();
-        $validated['status'] = 'pending';
+    $validated['slug']       = Str::slug($validated['name']) . '-' . Str::random(5);
+    $validated['curator_id'] = auth()->id();
+    $validated['status']     = 'pending';
 
-        if ($request->hasFile('images')) {
-    // Hapus gambar lama
-    if ($product->images) {
-        foreach ($product->images as $img) {
-            ImageHelper::delete($img);
-        }
+    if ($request->hasFile('images')) {
+        $validated['images'] = ImageHelper::uploadMultiple(
+            $request->file('images'),
+            'products',
+            800, 600
+        );
     }
-    $validated['images'] = ImageHelper::uploadMultiple(
-        $request->file('images'),
-        'products',
-        800, 600
-    );
+
+    Product::create($validated);
+
+    return redirect()->route('admin.products.index')
+        ->with('success', 'Produk berhasil diajukan, menunggu persetujuan Admin.');
 }
 
-        Product::create($validated);
 
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diajukan, menunggu persetujuan Admin.');
-    }
 
     public function edit(Product $product)
     {
@@ -77,29 +75,38 @@ class ProductController extends Controller
     }
 
     public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'creator_id' => 'required|exists:creators,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
+{
+    $validated = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'creator_id'  => 'required|exists:creators,id',
+        'name'        => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price'       => 'required|numeric|min:0',
+        'stock'       => 'required|integer|min:0',
+        'images'      => 'nullable|array|max:5',
+        'images.*' => 'image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+    ]);
 
-        if ($request->hasFile('images')) {
-            $paths = [];
-            foreach ($request->file('images') as $image) {
-                $paths[] = $image->store('products', 'public');
-            }
-            $validated['images'] = $paths;
+    if ($request->hasFile('images')) {
+    if ($product->images) {
+        foreach ($product->images as $img) {
+            ImageHelper::delete($img);
         }
-
-        $product->update($validated);
-
-        return redirect()->route('admin.products.index')->with('success', 'Produk berhasil diperbarui.');
     }
+    $validated['images'] = ImageHelper::uploadMultiple(
+        $request->file('images'),
+        'products',
+        800, 600
+    );
+} else {
+    unset($validated['images']);
+}
+
+    $product->update($validated);
+
+    return redirect()->route('admin.products.index')
+        ->with('success', 'Produk berhasil diperbarui.');
+}
 
     public function destroy(Product $product)
     {

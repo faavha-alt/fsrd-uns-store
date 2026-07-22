@@ -93,6 +93,10 @@
                class="sidebar-link {{ request()->routeIs('admin.email-settings.*') ? 'active' : '' }}">
                 <span class="sidebar-icon">📧</span> Pengaturan Email
             </a>
+            <a href="{{ route('admin.marketplaces.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.marketplaces.*') ? 'active' : '' }}">
+                <span class="sidebar-icon">🛍️</span> Marketplace
+            </a>
             <a href="{{ route('admin.activity-log.index') }}"
                class="sidebar-link {{ request()->routeIs('admin.activity-log.*') ? 'active' : '' }}">
                 <span class="sidebar-icon">🔐</span> Log Aktivitas

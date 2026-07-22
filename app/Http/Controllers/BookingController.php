@@ -18,16 +18,22 @@ class BookingController extends Controller
 {
     // Form booking per jadwal
     public function create(ClassSchedule $schedule)
-    {
-        if ($schedule->isFull()) {
-            return back()->with('error', 'Maaf, jadwal ini sudah penuh.');
-        }
-
-        $schedule->load('trainingClass.category', 'trainingClass.instructor');
-        $bankAccounts = BankAccount::where('is_active', true)->get();
-
-        return view('booking.create', compact('schedule', 'bankAccounts'));
+{
+    if ($schedule->remainingSlots() <= 0) {
+        return redirect()->route('pelatihan.show', $schedule->trainingClass)
+            ->with('error', 'Maaf, slot untuk jadwal ini sudah penuh.');
     }
+
+    $bankAccounts = \App\Models\BankAccount::where('is_active', true)->get();
+    
+    // Generate kode unik dan simpan di session
+    $uniqueCode = rand(100, 999);
+    session(['booking_unique_code_' . $schedule->id => $uniqueCode]);
+    
+    $total = $schedule->trainingClass->price + $uniqueCode;
+
+    return view('booking.create', compact('schedule', 'bankAccounts', 'uniqueCode', 'total'));
+}
 
     // Proses booking
     public function store(Request $request, ClassSchedule $schedule)
@@ -45,8 +51,9 @@ class BookingController extends Controller
             'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        $uniqueCode = rand(100, 999);
-        $total = $schedule->trainingClass->price + $uniqueCode;
+        // Ambil kode unik dari session
+$uniqueCode = session('booking_unique_code_' . $schedule->id, rand(100, 999));
+$total = $schedule->trainingClass->price + $uniqueCode;
 
         $proofPath = $request->file('payment_proof')->store('booking-proofs', 'public');
 

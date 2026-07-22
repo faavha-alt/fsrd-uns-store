@@ -11,41 +11,39 @@
 
 {{-- NAVBAR --}}
 <nav class="navbar">
-
-    {{-- BRAND --}}
     <div class="nav-brand">
         <div class="nav-logo">F</div>
         <div class="nav-title">
-            <strong>FSRD UNS Store</strong>
+            <strong>{{ \App\Models\Setting::get('site_name', 'FSRD UNS Store') }}</strong>
             <small>Seni Rupa & Desain</small>
         </div>
     </div>
 
-    {{-- MENU LINKS --}}
+    {{-- Desktop Nav Links --}}
     <div class="nav-links">
-    <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">Beranda</a>
-    <a href="{{ route('lapak.index') }}" class="nav-link {{ request()->routeIs('lapak.*') ? 'active' : '' }}">Lapak</a>
-    <a href="{{ route('pelatihan.index') }}" class="nav-link {{ request()->routeIs('pelatihan.*') ? 'active' : '' }}">Pelatihan</a>
-    <a href="{{ route('creator.index') }}" class="nav-link {{ request()->routeIs('creator.*') ? 'active' : '' }}">Kreator</a>
-    <a href="{{ route('tentang') }}" class="nav-link {{ request()->routeIs('tentang') ? 'active' : '' }}">Tentang</a>
+        <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">Beranda</a>
+        <a href="{{ route('lapak.index') }}" class="nav-link {{ request()->routeIs('lapak.*') ? 'active' : '' }}">Lapak</a>
+        <a href="{{ route('pelatihan.index') }}" class="nav-link {{ request()->routeIs('pelatihan.*') ? 'active' : '' }}">Pelatihan</a>
+        <a href="{{ route('creator.index') }}" class="nav-link {{ request()->routeIs('creator.*') ? 'active' : '' }}">Kreator</a>
+        <a href="{{ route('tentang') }}" class="nav-link {{ request()->routeIs('tentang') ? 'active' : '' }}">Tentang</a>
     </div>
 
-    {{-- SEARCH BAR --}}
-    <form action="{{ route('lapak.index') }}" method="GET" class="nav-search">
-        <input type="text" name="search" value="{{ request('search') }}"
-            placeholder="Cari produk atau kreator..."
-            class="nav-search-input">
+    {{-- Desktop Search --}}
+    <form class="nav-search" action="{{ route('lapak.index') }}" method="GET">
+        <input type="text" name="search" placeholder="Cari produk atau kreator..."
+            value="{{ request('search') }}" class="nav-search-input">
         <button type="submit" class="nav-search-btn">🔍</button>
     </form>
 
-    {{-- ACTIONS --}}
     <div class="nav-actions">
+        {{-- Cart --}}
         <a href="{{ route('cart.index') }}" class="nav-cart">
             🛒
             @if(session('cart') && count(session('cart')) > 0)
                 <span class="cart-badge">{{ count(session('cart')) }}</span>
             @endif
         </a>
+
         @auth
             @if(auth()->user()->role->value === 'buyer')
                 <a href="{{ route('buyer.account') }}" class="btn-login">Akun Saya</a>
@@ -60,9 +58,53 @@
             <a href="{{ route('buyer.login') }}" class="btn-login">Masuk</a>
             <a href="{{ route('buyer.register') }}" class="btn-register">Daftar</a>
         @endauth
+
+        {{-- Hamburger (mobile only) --}}
+        <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()"
+            style="display:none;">☰</button>
+    </div>
+</nav>
+
+{{-- Mobile Menu Dropdown --}}
+<div class="nav-mobile-menu" id="mobileMenu">
+    {{-- Search Mobile --}}
+    <div class="mobile-search">
+        <form action="{{ route('lapak.index') }}" method="GET">
+            <input type="text" name="search" placeholder="🔍 Cari produk atau kreator..."
+                value="{{ request('search') }}">
+        </form>
     </div>
 
-</nav>
+    {{-- Menu Links --}}
+    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">🏠 Beranda</a>
+    <a href="{{ route('lapak.index') }}" class="{{ request()->routeIs('lapak.*') ? 'active' : '' }}">🏺 Lapak</a>
+    <a href="{{ route('pelatihan.index') }}" class="{{ request()->routeIs('pelatihan.*') ? 'active' : '' }}">🎓 Pelatihan</a>
+    <a href="{{ route('creator.index') }}" class="{{ request()->routeIs('creator.*') ? 'active' : '' }}">👤 Kreator</a>
+    <a href="{{ route('tentang') }}" class="{{ request()->routeIs('tentang') ? 'active' : '' }}">ℹ️ Tentang</a>
+    <a href="{{ route('cara-pembelian') }}">📖 Cara Pembelian</a>
+
+    {{-- Auth Links --}}
+    <div style="border-top:1px solid rgba(255,255,255,0.1); padding: 8px 0;">
+        @auth
+            @if(auth()->user()->role->value === 'buyer')
+                <a href="{{ route('buyer.account') }}">👤 Akun Saya</a>
+                <form method="POST" action="{{ route('buyer.logout') }}">
+                    @csrf
+                    <button type="submit" style="width:100%; text-align:left; padding:12px 20px;
+                        background:none; border:none; color:rgba(255,255,255,0.85);
+                        font-size:14px; cursor:pointer; font-family:'Poppins',sans-serif;">
+                        🚪 Keluar
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('admin.dashboard') }}">⚙️ Dashboard Admin</a>
+            @endif
+        @else
+            <a href="{{ route('buyer.login') }}">🔑 Masuk</a>
+            <a href="{{ route('buyer.register') }}">✨ Daftar</a>
+        @endauth
+    </div>
+</div>
 
 @yield('content')
 
@@ -118,6 +160,7 @@
                 <a href="mailto:{{ \App\Models\Setting::get('contact_email') }}">Email Kami</a>
             @endif
         </div>
+        
 
     </div>
     <div class="footer-bottom">
@@ -135,5 +178,24 @@
 </a>
 @endif
 @stack('scripts')
+
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const btn  = document.getElementById('hamburgerBtn');
+    menu.classList.toggle('show');
+    btn.textContent = menu.classList.contains('show') ? '✕' : '☰';
+}
+
+// Close menu saat klik di luar
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('mobileMenu');
+    const btn  = document.getElementById('hamburgerBtn');
+    if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('show');
+        btn.textContent = '☰';
+    }
+});
+</script>
 </body>
 </html>
