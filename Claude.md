@@ -25,7 +25,7 @@ Platform e-commerce resmi FSRD UNS untuk penjualan karya seni dosen & mahasiswa 
 > **PENTING:** Baca bagian ini duluan setiap buka project — supaya langsung tahu sudah sampai mana, tanpa perlu re-derive dari `git log`.
 > Setiap selesai mengerjakan sesuatu yang cukup besar, **update bagian ini** (jangan cuma andalkan commit message).
 
-**Commit terakhir yang tercermin di dokumen ini:** `b1e457d`
+**Commit terakhir yang tercermin di dokumen ini:** `2ee4898`
 **Status:** Production, sudah live di https://project.favha.cloud
 
 ### Sudah selesai (checklist)
@@ -37,9 +37,12 @@ Platform e-commerce resmi FSRD UNS untuk penjualan karya seni dosen & mahasiswa 
 - [x] Export laporan Excel (order & booking) via `maatwebsite/excel`
 - [x] Google OAuth — login buyer + konfigurasi dari Admin Panel (`admin/email-settings`)
 - [x] Perbaikan UX alur booking
+- [x] Quill editor styling untuk deskripsi produk + rework layout form create/edit produk admin
+- [x] **Hardening produksi (2026-08-18)**: `APP_DEBUG` dimatikan di server, 21 CVE di dependency (dompdf/guzzle/commonmark/phpspreadsheet) di-patch, auth deploy server→GitHub dipindah dari PAT plaintext ke SSH deploy key, dependency dev (phpunit/mockery/dst) tidak lagi ikut ter-install di server, `intervention/image` (tidak terpakai) dihapus, scaffolding Tailwind/Vite/`welcome.blade.php` yang tidak terpakai dihapus dari repo
 
 ### Belum ada / belum diketahui
 - Belum ada roadmap Phase 2 tertulis di repo — kalau user minta fitur baru, cek dulu apakah sudah tercakup di atas sebelum asumsi ini "belum ada".
+- Token GitHub PAT lama (yang sempat plaintext di `.git/config` server) — belum terkonfirmasi sudah di-revoke manual oleh user di GitHub Settings.
 - Belum ada test coverage nyata (`tests/` masih file contoh bawaan Laravel — lihat bagian Testing).
 
 Kalau `git log` menunjukkan commit setelah `b1e457d` yang belum tercatat di sini, checklist di atas kemungkinan sudah usang — cross-check dan update.
@@ -64,8 +67,11 @@ Path:       /home/favha-project/htdocs/project.favha.cloud
 laravel/socialite      → Google OAuth
 barryvdh/laravel-dompdf → PDF Bukti Booking
 maatwebsite/excel      → Export laporan Excel
-intervention/image 4.x → Image processing (PAKAI GD langsung, bukan facade)
 quill.js 1.3.6        → Rich text editor (CDN, bukan npm)
+
+# Image processing TIDAK pakai library — pakai fungsi GD langsung (imagecreatefromstring, dll)
+# di app/Helpers/ImageHelper.php. intervention/image sempat ter-install tapi tidak pernah
+# dipakai di kode — sudah di-composer-remove (Agustus 2026).
 ```
 
 ---
@@ -546,9 +552,17 @@ php artisan test tests/Feature/Xyz.php    # Jalankan satu file test
 # Lint / format (Laravel Pint, terpasang di composer require-dev)
 vendor/bin/pint                     # Format semua file sesuai style
 vendor/bin/pint --test              # Cek tanpa mengubah file (dry-run)
+
+# Security & dependency
+composer audit --locked             # Cek CVE di composer.lock (composer >=2.4; server pakai 2.2.3, jalankan dari mesin dev)
+
+# Deploy ke server (lihat "Status & Progress" di atas untuk cara SSH)
+git pull origin main
+composer install --no-dev --optimize-autoloader   # WAJIB --no-dev di produksi
+php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
-> Catatan: `package.json`/`vite.config.js` dan Tailwind ada di repo sebagai sisa scaffolding default Laravel — **jangan dipakai** (lihat aturan di atas: proyek ini murni Blade + `public/css/frontend.css` + vanilla JS, tanpa build step).
+> `package.json`, `vite.config.js`, `resources/js/`, `resources/css/`, `welcome.blade.php`, dan `.npmrc` **sudah dihapus dari repo** (Agustus 2026) — itu semua sisa scaffolding default Laravel yang tidak pernah dipakai (proyek ini murni Blade + `public/css/frontend.css` + vanilla JS, tanpa build step, tanpa `node_modules` di server). Jangan tambahkan lagi kecuali memang mau pindah ke build pipeline.
 
 ---
 
