@@ -96,9 +96,9 @@
             <div style="margin-top:20px;">
                 <div style="font-size:12px; font-weight:700; text-transform:uppercase;
                     letter-spacing:0.06em; color:var(--muted); margin-bottom:8px;">Deskripsi</div>
-                <p style="font-size:13px; line-height:1.7; color:var(--ink);">
-                    {{ $product->description }}
-                </p>
+                <div class="product-description" style="font-size:13px; color:var(--ink);">
+    {!! $product->description !!}
+</div>
             </div>
             @endif
 

@@ -1267,3 +1267,14 @@ html { scroll-behavior: smooth; }
     .footer-brand { grid-column: 1 / -1; }
     .section { padding: 32px 24px !important; }
 }
+
+/* ===== QUILL OUTPUT STYLING ===== */
+.product-description p  { margin-bottom: 8px; line-height: 1.7; }
+.product-description h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--cerulean-dark); }
+.product-description h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--cerulean-dark); }
+.product-description strong { font-weight: 700; }
+.product-description em { font-style: italic; }
+.product-description ul,
+.product-description ol { padding-left: 20px; margin-bottom: 8px; }
+.product-description li { margin-bottom: 4px; }
+.product-description a  { color: var(--cerulean); text-decoration: underline; }
