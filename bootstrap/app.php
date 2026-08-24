@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         'admin.or.kurator' => \App\Http\Middleware\EnsureAdminOrKurator::class,
         'admin.timeout'    => \App\Http\Middleware\AdminSessionTimeout::class,
     ]);
+    $middleware->web(append: [
+        \App\Http\Middleware\EnsureInstalled::class,
+        \App\Http\Middleware\EnsureLicensed::class,
+    ]);
 })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -5,6 +5,24 @@ use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================================
+// INSTALLER (web wizard, tanpa perlu akses shell/SSH)
+// ============================================================
+
+Route::prefix('install')->name('install.')->controller(\App\Http\Controllers\InstallController::class)->group(function () {
+    Route::get('/license', 'license')->name('license');
+    Route::post('/license', 'licenseStore')->name('license.store');
+    Route::get('/', 'welcome')->name('welcome');
+    Route::get('/database', 'database')->name('database');
+    Route::post('/database', 'databaseStore')->name('database.store');
+    Route::get('/account', 'account')->name('account');
+    Route::post('/account', 'accountStore')->name('account.store');
+    Route::get('/confirm', 'confirm')->name('confirm');
+    Route::post('/run', 'run')->name('run');
+    Route::get('/success', 'success')->name('success');
+});
+
+
+// ============================================================
 // PUBLIC ROUTES
 // ============================================================
 

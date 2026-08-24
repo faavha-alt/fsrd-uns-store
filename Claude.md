@@ -28,6 +28,8 @@ Platform e-commerce resmi FSRD UNS untuk penjualan karya seni dosen & mahasiswa 
 **Commit terakhir yang tercermin di dokumen ini:** `2ee4898`
 **Status:** Production, sudah live di https://project.favha.cloud
 
+> ⚠️ **WAJIB sebelum deploy commit yang menambahkan web installer (lihat checklist di bawah)** ke server produksi yang sudah live: buat file kosong `storage/installed.lock` di server (`touch storage/installed.lock` via SSH) **sebelum atau tepat sesudah** `git pull`. File ini sengaja di-gitignore (tidak ikut ter-clone ke server baru, supaya wizard `/install` bisa jalan di server baru) — tapi kalau tidak dibuat di server produksi yang sudah berjalan, middleware `EnsureInstalled` akan mengira aplikasi belum ter-install dan me-redirect semua traffic ke `/install`, berpotensi membuka form re-konfigurasi database di depan situs yang sudah live. Ini satu-satunya perintah shell yang masih dibutuhkan, dan hanya sekali (transisi), bukan kebutuhan rutin.
+
 ### Sudah selesai (checklist)
 - [x] **Phase 1** — platform inti: katalog produk (lapak), pelatihan, cart, checkout kode unik, booking kelas, admin panel (CRUD produk/pelatihan/kategori/kreator/user/rekening), auth admin + buyer, approval workflow, email notifikasi
 - [x] Multi-image produk + lightbox galeri di halaman detail
@@ -39,6 +41,12 @@ Platform e-commerce resmi FSRD UNS untuk penjualan karya seni dosen & mahasiswa 
 - [x] Perbaikan UX alur booking
 - [x] Quill editor styling untuk deskripsi produk + rework layout form create/edit produk admin
 - [x] **Hardening produksi (2026-08-18)**: `APP_DEBUG` dimatikan di server, 21 CVE di dependency (dompdf/guzzle/commonmark/phpspreadsheet) di-patch, auth deploy server→GitHub dipindah dari PAT plaintext ke SSH deploy key, dependency dev (phpunit/mockery/dst) tidak lagi ikut ter-install di server, `intervention/image` (tidak terpakai) dihapus, scaffolding Tailwind/Vite/`welcome.blade.php` yang tidak terpakai dihapus dari repo
+- [x] **Web installer (2026-08-24)**: wizard instalasi ala WordPress di `/install` (`app/Http/Controllers/InstallController.php`, view `resources/views/install/*`) — cek requirement server, input kredensial DB (tes koneksi via PDO + auto `CREATE DATABASE IF NOT EXISTS`), tulis `.env` (`app/Helpers/EnvHelper.php`), jalankan `key:generate`+`migrate`+`storage:link` lewat `Artisan::call()`, buat akun Admin pertama — semua dari browser, tanpa SSH. Ditandai selesai lewat `storage/installed.lock` (gitignored) yang dicek oleh middleware `EnsureInstalled` (global, di `bootstrap/app.php`) untuk redirect ke `/install` selama lock belum ada, dan mengunci `/install` setelah lock ada. Sebelum lock ada, `AppServiceProvider::register()` memaksa `session`/`cache`/`queue` pakai driver `file`/`sync` (DB belum tentu ada) — lihat detail & pitfall di bawah. `public/index.php` juga otomatis meng-copy `.env.example` → `.env` (dengan `APP_KEY` acak) kalau `.env` belum ada, supaya halaman `/install` bisa tampil sama sekali. **Belum sempat di-test end-to-end** (PHP lokal 8.2, project butuh ^8.3 — cuma tervalidasi lewat `php -l` tiap file + tracing manual siklus request); coba jalankan wizard di server/lingkungan ber-PHP 8.3+ sebelum benar-benar dipakai untuk pindah server produksi.
+- [x] **Sistem lisensi anti-pindah-tangan (2026-08-24)**: wizard `/install` sekarang minta license key di step pertama (`app/Http/Controllers/InstallController.php::license()/licenseStore()`, view `resources/views/install/license.blade.php`) yang diaktivasi ke **license server terpisah** (lihat di bawah) — key otomatis terkunci ke domain yang aktivasi pertama kali. Setelah terinstall, middleware `EnsureLicensed` (global, di `bootstrap/app.php`, setelah `EnsureInstalled`) mengecek status lisensi secara berkala (throttled, max 1x/jam via `Cache::add`) lewat `app/Helpers/LicenseHelper.php`, disimpan di `Setting::get('license_status')`/`license_last_check_at`. Kalau domain berubah (dipindah tanpa izin) atau di-revoke dari sisi kita → **situs dikunci total** (halaman `resources/views/license-locked.blade.php`, HTTP 503) — untuk gangguan jaringan biasa ada masa tenggang `LICENSE_GRACE_DAYS` (default 3 hari, config `config/license.php`) sebelum ikut terkunci. Ada juga `php artisan license:check` (dipanggil manual/cron) dan `php artisan license:activate {key?}` (retrofit instalasi lama). **Kalau `LICENSE_SERVER_URL`/`LICENSE_KEY` kosong di `.env`, seluruh mekanisme ini otomatis dilewati (tidak mengunci apa pun)** — jadi aman untuk dev lokal tanpa lisensi.
+
+  **License server-nya (`activate.php`/`check.php`/`admin.php`, PHP polos + MySQL, tanpa dependency Composer, TIDAK ada di repo ini secara sengaja)** sudah live di **https://lisensi.mipa.uns.ac.id**, source lokalnya di `D:\fsrd-license-server\` (sibling folder, bukan di dalam `fsrd-uns-store`). Ada dashboard admin di `/admin.php` (stats, filter/search per app/status, catatan internal per key, revoke/reactivate/reset-domain/delete) — HTTP Basic Auth. Database MySQL (`db lisensi`, user `lisensi`, host `127.0.0.1` — kredensial di `app/config.php` server itu, chmod 600, jangan pernah taruh di repo manapun) dipilih setelah awalnya sempat pakai SQLite (data lama diarsipkan di `app/licenses.sqlite.bak-migrated-to-mysql` di server). Sudah menerbitkan & mengaktivasi 1 key untuk `fsrd-uns-store` terkunci ke domain `project.favha.cloud`. Akses SSH ke server lisensi: `ssh -p 1103 lisensi@lisensi.mipa.uns.ac.id` pakai key `~/.ssh/lisensi_mipa_uns` (dibuat 2026-08-24, sudah diotorisasi user lewat panel hosting — bukan password). Detail struktur folder & alur kerja (revoke/reset-domain untuk pindah server yang sah) ada di `D:\fsrd-license-server\README.md`.
+
+  > ⚠️ **WAJIB ditambahkan ke `.env` produksi `project.favha.cloud`** (server ini belum lewat wizard `/install`, jadi retrofit manual): `LICENSE_KEY`, `LICENSE_SERVER_URL=https://lisensi.mipa.uns.ac.id`, `LICENSE_API_SECRET` (nilai persis sama dengan `api_secret` di `app/config.php` milik license server — lihat riwayat percakapan 2026-08-24 atau `D:\fsrd-license-server\app\config.php` kalau masih ada akses). Setelah `.env` diisi, jalankan `php artisan license:activate` sekali (atau cukup tunggu — `EnsureLicensed` akan self-heal di request admin berikutnya). **Belum dilakukan di server produksi** — sampai ini dikerjakan, middleware `EnsureLicensed` di produksi akan no-op (karena `LICENSE_SERVER_URL` masih kosong di `.env` produksi), jadi situs TIDAK akan terkunci sendiri, tapi juga belum terlindungi.
 
 ### Belum ada / belum diketahui
 - Belum ada roadmap Phase 2 tertulis di repo — kalau user minta fitur baru, cek dulu apakah sudah tercakup di atas sebelum asumsi ini "belum ada".
@@ -274,6 +282,13 @@ google_oauth_enabled, google_client_id, google_client_secret, google_redirect_ur
 
 ## 🔐 Keamanan & Akses
 
+### SSH ke server produksi (2026-08-24)
+`project.favha.cloud` di-proxy Cloudflare (orange-cloud) — domain publiknya **tidak bisa** dipakai untuk SSH (semua port selain 80/443 di-drop diam-diam oleh Cloudflare, bukan ditolak). Akses langsung ke origin server lewat **Tailscale**:
+```
+ssh -i ~/.ssh/project_favha_cloud favha-project@10.11.12.30   # port 22, IP internal Tailscale (bukan tailnet IP 100.x)
+```
+Key dibuat & diotorisasi 2026-08-24 (public key ditambahkan user lewat CloudPanel). Tailscale sudah terpasang & aktif di mesin dev (MagicDNS terdeteksi otomatis) — kalau di sesi lain `ping 10.11.12.30` gagal, cek dulu status Tailscale (`tailscale status`) sebelum asumsi server down.
+
 ### URL Admin (Rahasia)
 ```
 URL Login: /management-fsrd/masuk
@@ -455,6 +470,15 @@ Poppins    → body text, paragraf
 
 ## 🔑 Key Learnings / Pitfalls
 
+### Web Installer — kenapa session/cache dipaksa ke driver `file` sebelum install
+```php
+// app/Providers/AppServiceProvider.php::register()
+if (!file_exists(storage_path('installed.lock'))) {
+    config(['session.driver' => 'file', 'cache.default' => 'file', 'queue.default' => 'sync']);
+}
+```
+Default project ini `SESSION_DRIVER=database` & `CACHE_STORE=database` (lihat `.env.example`) — tapi sebelum wizard `/install` selesai, tabel `sessions`/`cache` (bahkan DB-nya) belum tentu ada. Tanpa override ini, request pertama ke server baru langsung crash (session middleware gagal query ke DB yang belum dikonfigurasi). Override ini otomatis berhenti begitu `storage/installed.lock` dibuat di akhir wizard — request setelahnya balik pakai driver `database` sesuai `.env` seperti biasa. Kalau menambah service provider baru yang jalan di `register()`/`boot()` awal, jangan asumsikan DB sudah bisa diakses — cek `file_exists(storage_path('installed.lock'))` dulu kalau perlu.
+
 ### Route Ordering — KRITIS
 ```php
 // ✅ BENAR — spesifik SEBELUM wildcard
@@ -556,11 +580,28 @@ vendor/bin/pint --test              # Cek tanpa mengubah file (dry-run)
 # Security & dependency
 composer audit --locked             # Cek CVE di composer.lock (composer >=2.4; server pakai 2.2.3, jalankan dari mesin dev)
 
-# Deploy ke server (lihat "Status & Progress" di atas untuk cara SSH)
+# Deploy ke server yang SUDAH terinstall (lihat "Status & Progress" di atas untuk cara SSH)
 git pull origin main
 composer install --no-dev --optimize-autoloader   # WAJIB --no-dev di produksi
 php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
+
+### Instalasi di server BARU (pindah server, tanpa akses shell)
+Sejak ada web installer (`/install`), setup awal di server baru bisa full lewat browser:
+1. Upload seluruh isi repo **termasuk folder `vendor/`** (di-zip lalu extract, atau `composer install` sekali kalau masih ada akses shell) ke document root — `.env` sengaja TIDAK di-upload/di-generate manual.
+2. Arahkan domain/document root ke folder `public/`.
+3. Buka domain di browser → otomatis redirect ke `/install` → ikuti wizard: cek requirement → isi kredensial DB → isi nama situs & akun Admin pertama → Install.
+4. Wizard yang menulis `.env`, generate `APP_KEY`, jalankan migrasi, dan buat akun Admin — tanpa perlu SSH sama sekali.
+
+Satu-satunya keterbatasan: `vendor/` tetap harus ada di server (composer install butuh CLI) — solusinya upload paket rilis yang sudah menyertakan `vendor/`, bukan clone repo mentah.
+
+#### Cara bikin "master zip" paket rilis itu
+`scripts/build-release.sh` (dites 2026-08-24 langsung di server produksi lewat SSH via Tailscale — `git archive HEAD` untuk source tracked-only (otomatis TIDAK menyertakan `.env`/isi asli `storage/`/`.git`), lalu `composer install --no-dev --optimize-autoloader` di direktori sementara terpisah, lalu di-zip. Tidak pernah menyentuh working tree/`storage/` asli di server, jadi aman dijalankan di produksi sekalipun.
+```bash
+bash scripts/build-release.sh                    # hasil: ~/release-build/fsrd-uns-store-<commit>.zip
+bash scripts/build-release.sh /path/output/lain   # custom output dir
+```
+Jalankan dari server yang source-nya mau dipaketkan (biasanya produksi, karena `vendor/` di situ sudah cocok PHP versi produksi). **Zip yang dihasilkan mengikuti commit `HEAD` yang ter-*push* — kalau ada perubahan lokal yang belum di-push ke server itu (mis. web installer & sistem lisensi di atas, per commit tulisan ini masih di local checkout `D:\fsrd-uns-store`, BELUM di-push/di-deploy ke `project.favha.cloud`), zip TIDAK akan menyertakannya.** Push + deploy dulu ke server yang mau dipakai sebagai sumber build, baru jalankan script ini.
 
 > `package.json`, `vite.config.js`, `resources/js/`, `resources/css/`, `welcome.blade.php`, dan `.npmrc` **sudah dihapus dari repo** (Agustus 2026) — itu semua sisa scaffolding default Laravel yang tidak pernah dipakai (proyek ini murni Blade + `public/css/frontend.css` + vanilla JS, tanpa build step, tanpa `node_modules` di server). Jangan tambahkan lagi kecuali memang mau pindah ke build pipeline.
 
