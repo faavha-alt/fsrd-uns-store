@@ -26,9 +26,14 @@ class InstallController extends Controller
     public function license()
     {
         if (!$this->licenseServerConfigured()) {
-            // Paket instalasi ini tidak dibekali konfigurasi license server —
-            // JANGAN diam-diam dilewati, hentikan instalasi sama sekali.
-            return view('install.license', ['unconfigured' => true]);
+            // Sistem lisensi sedang ditunda (project.favha.cloud belum siap
+            // jadi license server) — lewati langsung supaya instalasi tetap
+            // bisa jalan tanpa hambatan ke server manapun. Lihat CLAUDE.md
+            // untuk cara mengaktifkan kembali gating lisensi kalau nanti
+            // sudah siap.
+            session(['install.license' => 'skipped']);
+
+            return redirect()->route('install.database');
         }
 
         return view('install.license', [
