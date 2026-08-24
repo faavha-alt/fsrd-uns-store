@@ -1,11 +1,7 @@
-* text=auto eol=lf
-
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
-*.php diff=php
-
-/.github export-ignore
-CHANGELOG.md export-ignore
-.styleci.yml export-ignore
+# File-file ini TETAP di-track git (dipakai tim/CLAUDE untuk kerja sehari-hari),
+# tapi TIDAK PERNAH ikut ke dalam `git archive` — yaitu paket zip yang dibuat
+# scripts/build-release.sh untuk diserahkan ke pihak lain untuk instalasi.
+# CLAUDE.md isinya detail operasional produksi (akses SSH, IP server, URL
+# license server, dll) yang tidak boleh ikut terdistribusi ke luar tim.
+Claude.md export-ignore
+tests export-ignore
