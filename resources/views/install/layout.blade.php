@@ -172,7 +172,7 @@
 
         @if (isset($step))
             <div class="install-steps">
-                @foreach (['Lisensi', 'Cek Server', 'Database', 'Akun Admin', 'Konfirmasi'] as $i => $label)
+                @foreach (['Cek Server', 'Lisensi', 'Database', 'Akun Admin', 'Konfirmasi'] as $i => $label)
                     <div class="install-step {{ $i + 1 == $step ? 'active' : ($i + 1 < $step ? 'done' : '') }}">{{ $i + 1 < $step ? '✓' : $i + 1 }}</div>
                     @if (!$loop->last)
                         <div class="install-step-line"></div>

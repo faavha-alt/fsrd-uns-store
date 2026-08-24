@@ -20,7 +20,7 @@ class InstallController extends Controller
     protected const MIN_PHP = '8.3.0';
 
     protected const REQUIRED_EXTENSIONS = [
-        'pdo_mysql', 'mbstring', 'openssl', 'tokenizer', 'xml', 'ctype', 'json', 'fileinfo', 'gd',
+        'pdo_mysql', 'mbstring', 'openssl', 'tokenizer', 'xml', 'ctype', 'json', 'fileinfo', 'gd', 'curl',
     ];
 
     public function license()
@@ -56,7 +56,7 @@ class InstallController extends Controller
                 'invalid'     => 'License key tidak ditemukan.',
                 'revoked'     => 'License key ini sudah dinonaktifkan.',
                 'mismatched'  => 'License key ini sudah dipakai di domain lain. Hubungi penyedia layanan untuk memindahkannya ke domain ini.',
-                'unreachable' => 'Tidak bisa menghubungi license server. Cek koneksi internet server ini, lalu coba lagi.',
+                'unreachable' => 'Tidak bisa menghubungi license server. Cek koneksi internet server ini, lalu coba lagi. Detail teknis: '.($result['message'] ?? '-'),
                 default       => 'Aktivasi gagal: '.($result['message'] ?? $status),
             };
 
@@ -68,15 +68,11 @@ class InstallController extends Controller
             'install.license_key' => $data['license_key'],
         ]);
 
-        return redirect()->route('install.welcome');
+        return redirect()->route('install.database');
     }
 
     public function welcome()
     {
-        if (!session('install.license')) {
-            return redirect()->route('install.license');
-        }
-
         $checks = $this->runRequirementChecks();
         $ready = collect($checks)->every(fn ($check) => $check['ok']);
 

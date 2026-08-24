@@ -1,6 +1,6 @@
 @extends('install.layout')
 
-@php($step = 1)
+@php($step = 2)
 
 @section('title', 'Aktivasi Lisensi')
 @section('heading', 'Aktivasi Lisensi')
@@ -23,4 +23,5 @@
             <button type="submit" class="btn-submit">Aktivasi & Lanjutkan →</button>
         </form>
     @endif
+    <a href="{{ route('install.welcome') }}" class="btn-back">← Kembali</a>
 @endsection

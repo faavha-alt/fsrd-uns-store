@@ -1,6 +1,6 @@
 @extends('install.layout')
 
-@php($step = 2)
+@php($step = 1)
 
 @section('title', 'Cek Server')
 @section('heading', 'Cek Kesiapan Server')
@@ -18,7 +18,7 @@
     </ul>
 
     @if ($ready)
-        <a href="{{ route('install.database') }}" class="btn-submit" style="display:block; text-align:center; text-decoration:none; box-sizing:border-box;">Lanjutkan →</a>
+        <a href="{{ route('install.license') }}" class="btn-submit" style="display:block; text-align:center; text-decoration:none; box-sizing:border-box;">Lanjutkan →</a>
     @else
         <div class="alert-danger">Ada syarat yang belum terpenuhi. Perbaiki dulu (hubungi hosting/admin server jika perlu), lalu muat ulang halaman ini.</div>
         <a href="{{ route('install.welcome') }}" class="btn-back">Muat ulang</a>

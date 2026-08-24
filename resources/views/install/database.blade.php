@@ -35,5 +35,5 @@
 
         <button type="submit" class="btn-submit">Tes Koneksi & Lanjutkan →</button>
     </form>
-    <a href="{{ route('install.welcome') }}" class="btn-back">← Kembali</a>
+    <a href="{{ route('install.license') }}" class="btn-back">← Kembali</a>
 @endsection

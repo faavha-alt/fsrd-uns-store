@@ -33,7 +33,8 @@ class LicenseHelper
         }
 
         try {
-            $response = Http::timeout(5)
+            $response = Http::connectTimeout(5)
+                ->timeout(10)
                 ->withHeaders(['X-License-Secret' => (string) config('license.api_secret')])
                 ->asForm()
                 ->post("{$base}/{$endpoint}", [
@@ -44,6 +45,12 @@ class LicenseHelper
 
             return $response->json() ?? ['status' => 'error', 'message' => 'Respons license server tidak valid.'];
         } catch (Throwable $e) {
+            \Log::warning('LicenseHelper: gagal menghubungi license server', [
+                'endpoint' => $endpoint,
+                'base'     => $base,
+                'error'    => $e->getMessage(),
+            ]);
+
             return ['status' => 'unreachable', 'message' => $e->getMessage()];
         }
     }

@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Route;
 // ============================================================
 
 Route::prefix('install')->name('install.')->controller(\App\Http\Controllers\InstallController::class)->group(function () {
+    Route::get('/', 'welcome')->name('welcome');
     Route::get('/license', 'license')->name('license');
     Route::post('/license', 'licenseStore')->name('license.store');
-    Route::get('/', 'welcome')->name('welcome');
     Route::get('/database', 'database')->name('database');
     Route::post('/database', 'databaseStore')->name('database.store');
     Route::get('/account', 'account')->name('account');
