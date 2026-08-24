@@ -25,19 +25,24 @@ class InstallController extends Controller
 
     public function license()
     {
-        if (!config('license.server_url')) {
-            // Fitur lisensi tidak dikonfigurasi di paket ini — lewati langsung.
-            session(['install.license' => 'skipped']);
-            return redirect()->route('install.welcome');
+        if (!$this->licenseServerConfigured()) {
+            // Paket instalasi ini tidak dibekali konfigurasi license server —
+            // JANGAN diam-diam dilewati, hentikan instalasi sama sekali.
+            return view('install.license', ['unconfigured' => true]);
         }
 
         return view('install.license', [
+            'unconfigured' => false,
             'old' => session('install.license_key', ''),
         ]);
     }
 
     public function licenseStore(Request $request)
     {
+        if (!$this->licenseServerConfigured()) {
+            return redirect()->route('install.license');
+        }
+
         $data = $request->validate([
             'license_key' => 'required|string|max:255',
         ]);
@@ -264,6 +269,11 @@ class InstallController extends Controller
         }
 
         return view('install.success');
+    }
+
+    protected function licenseServerConfigured(): bool
+    {
+        return (bool) config('license.server_url') && (bool) config('license.api_secret');
     }
 
     protected function runRequirementChecks(): array
