@@ -59,8 +59,12 @@ rm -f "$OUT_DIR/${NAME}.zip"
 (cd "$STAGE" && zip -rq "$OUT_DIR/${NAME}.zip" fsrd-uns-store public_html PANDUAN-HOSTING-CPANEL.md)
 
 # 6. Verifikasi cepat isi paket
-unzip -l "$OUT_DIR/${NAME}.zip" >/dev/null || { echo "ERROR: zip tidak valid." >&2; exit 1; }
-unzip -l "$OUT_DIR/${NAME}.zip" | grep -q "fsrd-uns-store/vendor/autoload.php" || { echo "ERROR: vendor/ tidak masuk paket." >&2; exit 1; }
-if unzip -l "$OUT_DIR/${NAME}.zip" | grep -qi "claude.md"; then echo "ERROR: Claude.md ikut ke paket." >&2; exit 1; fi
+#    (hindari `grep -q` di pipeline: dengan `pipefail`, SIGPIPE dari unzip bikin
+#     pipeline dianggap gagal walau grep-nya menemukan match)
+ZIP="$OUT_DIR/${NAME}.zip"
+ZIP_LIST="$(unzip -l "$ZIP")" || { echo "ERROR: zip tidak valid." >&2; exit 1; }
+grep -q "fsrd-uns-store/vendor/autoload.php" <<<"$ZIP_LIST" || { echo "ERROR: vendor/ tidak masuk paket." >&2; exit 1; }
+if grep -qi "claude.md" <<<"$ZIP_LIST"; then echo "ERROR: Claude.md ikut ke paket." >&2; exit 1; fi
+if grep -qi "cpanel/_extract.php" <<<"$ZIP_LIST"; then echo "INFO: helper _extract.php ikut (diharapkan, dihapus user setelah dipakai)." >&2; fi
 
-echo "Selesai: $OUT_DIR/${NAME}.zip ($(du -h "$OUT_DIR/${NAME}.zip" | cut -f1))"
+echo "Selesai: $ZIP ($(du -h "$ZIP" | cut -f1))"
