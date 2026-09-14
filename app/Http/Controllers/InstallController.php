@@ -17,7 +17,13 @@ use Throwable;
 
 class InstallController extends Controller
 {
-    protected const MIN_PHP = '8.3.0';
+    // composer.lock mensyaratkan PHP >= 8.4.1 (Symfony 8) dan < 8.5.0
+    // (phpoffice/phpspreadsheet 1.30.x) — jadi hanya jalur PHP 8.4.x yang
+    // didukung. composer.json masih menulis ^8.3 (stale); jangan turunkan
+    // batas ini tanpa me-regenerate composer.lock di platform yang sesuai.
+    protected const MIN_PHP = '8.4.1';
+
+    protected const MAX_PHP_EXCLUSIVE = '8.5.0';
 
     protected const REQUIRED_EXTENSIONS = [
         'pdo_mysql', 'mbstring', 'openssl', 'tokenizer', 'xml', 'ctype', 'json', 'fileinfo', 'gd', 'curl',
@@ -281,8 +287,11 @@ class InstallController extends Controller
     {
         $checks = [];
 
-        $checks['PHP >= '.self::MIN_PHP] = [
-            'ok'    => version_compare(PHP_VERSION, self::MIN_PHP, '>='),
+        $phpOk = version_compare(PHP_VERSION, self::MIN_PHP, '>=')
+            && version_compare(PHP_VERSION, self::MAX_PHP_EXCLUSIVE, '<');
+
+        $checks['PHP 8.4.x (min '.self::MIN_PHP.', belum mendukung 8.5+)'] = [
+            'ok'    => $phpOk,
             'label' => 'Versi PHP terpasang: '.PHP_VERSION,
         ];
 
