@@ -8,21 +8,20 @@ browser + database yang diberikan pihak hosting.
 
 | Kebutuhan | Nilai |
 |---|---|
-| PHP | **8.4.x** — minimal **8.4.1**, maksimal **8.4.99** (jangan PHP 8.5) |
+| PHP | **8.3 atau 8.4** — minimal **8.3.0**, maksimal **8.4.x** (jangan PHP 8.5) |
 | Ekstensi PHP | `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `fileinfo`, `gd`, `curl` (dan `zip` kalau pakai `_extract.php`) |
 | Database | MySQL/MariaDB, 1 database + 1 user (boleh dibuatkan pihak hosting) |
 | Akses | FTP (upload file) — SSH **tidak diperlukan** |
 | Fungsi PHP | `symlink()` idealnya tidak diblokir (untuk gambar upload). Kalau diblokir, lihat bagian Troubleshooting. |
 
-Kenapa PHP-nya sempit:
-- **8.3 ke bawah tidak bisa** — `composer.lock` mengunci Symfony 8 yang butuh PHP >= 8.4.1.
-- **8.5 tidak didukung** — `phpoffice/phpspreadsheet` 1.30.x (dipakai export Excel) masih
+Kenapa batasnya begitu:
+- **PHP 8.3 didukung** — `composer.lock` di-resolve dengan `config.platform.php = 8.3.0`
+  (Symfony 7.4), jadi tidak perlu PHP 8.4.
+- **8.5 belum didukung** — `phpoffice/phpspreadsheet` 1.30.x (dipakai export Excel) masih
   mendeklarasikan `< 8.5.0`.
 
-> Sebelum lanjut, set dulu PHP-nya ke **8.4**: di cPanel lewat **MultiPHP Manager** /
-> **Select PHP Version**, atau minta pihak hosting. Hosting yang hanya menyediakan
-> PHP 8.1–8.3 atau hanya 8.5 **belum bisa** memakai aplikasi ini — wizard `/install`
-> akan menampilkan requirement merah di step pertama, dan itu memang benar.
+> Pastikan PHP di hosting diset ke **8.3** (atau 8.4): di cPanel lewat **MultiPHP Manager** /
+> **Select PHP Version**. Kalau ternyata 8.5, minta turunkan ke 8.4/8.3 dulu.
 
 ## 2. Isi paket
 
@@ -121,7 +120,8 @@ Setelah selesai, login admin di: `https://domain-anda/management-fsrd/masuk`
 
 ## 7. Membuat ulang paket ini dari commit yang lebih baru
 
-Dari komputer/server yang punya checkout repo + PHP 8.4/8.5 + Composer:
+Dari komputer/server yang punya checkout repo + Composer (PHP 8.3+; build di mesin
+PHP 8.5 juga bisa karena lock sudah di-resolve untuk 8.3):
 
 ```bash
 git fetch origin

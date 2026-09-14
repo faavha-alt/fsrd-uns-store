@@ -38,9 +38,10 @@ mkdir -p "$STAGE/fsrd-uns-store" "$STAGE/public_html"
 git -C "$REPO_DIR" archive "$REF" | tar -x -C "$STAGE/fsrd-uns-store"
 
 # 2. vendor/ — hosting tanpa SSH tidak bisa `composer install`.
-#    Target resmi server adalah PHP 8.4.x (Symfony 8 butuh >=8.4.1; phpspreadsheet
-#    1.30.x masih mengunci <8.5). Kalau build dijalankan memakai PHP 8.5+ (kasus
-#    mesin dev ini), composer menolak lock-nya hanya karena batas atas metadata
+#    Target server: PHP 8.3/8.4 (composer.json sudah memakai config.platform.php
+#    8.3.0, jadi lock-nya di-resolve untuk Symfony 7.4; phpspreadsheet 1.30.x
+#    masih mengunci <8.5). Kalau build dijalankan memakai PHP 8.5+ (kasus mesin
+#    dev ini), composer menolak lock hanya karena batas atas metadata
 #    phpspreadsheet — versinya toh sudah dipatok lock, jadi dipakai
 #    --ignore-platform-req=php. composer.json TIDAK diubah.
 (cd "$STAGE/fsrd-uns-store" && composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=php)
