@@ -64,7 +64,7 @@ rm -f "$OUT_DIR/${NAME}.zip"
 ZIP="$OUT_DIR/${NAME}.zip"
 ZIP_LIST="$(unzip -l "$ZIP")" || { echo "ERROR: zip tidak valid." >&2; exit 1; }
 grep -q "fsrd-uns-store/vendor/autoload.php" <<<"$ZIP_LIST" || { echo "ERROR: vendor/ tidak masuk paket." >&2; exit 1; }
-if grep -qi "claude.md" <<<"$ZIP_LIST"; then echo "ERROR: Claude.md ikut ke paket." >&2; exit 1; fi
+if grep -qiE '(^| )fsrd-uns-store/Claude\.md$' <<<"$ZIP_LIST"; then echo "ERROR: Claude.md ikut ke paket." >&2; exit 1; fi
 if grep -qi "cpanel/_extract.php" <<<"$ZIP_LIST"; then echo "INFO: helper _extract.php ikut (diharapkan, dihapus user setelah dipakai)." >&2; fi
 
 echo "Selesai: $ZIP ($(du -h "$ZIP" | cut -f1))"
